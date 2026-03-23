@@ -1,0 +1,23 @@
+# =============================================================================
+# LAMP Stack - Git Ignore Rules
+# Rename this file to .gitignore
+# =============================================================================
+
+# Never commit the .env file - it contains passwords
+.env
+
+# Windows thumbnail cache
+Thumbs.db
+
+# MacOS metadata
+.DS_Store
+
+# Editor directories
+.vscode/
+.idea/
+
+# Setup and Local Files
+*.txt
+*.bat
+
+

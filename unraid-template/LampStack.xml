@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+<ComposeManager version="1">
+
+  <!--
+    LAMP Stack - UnRAID Compose Manager Template
+    Maintainer: Edd Case <github.com/EddCase>
+    Repository: https://github.com/EddCase/unraid-lamp-stack
+  -->
+
+  <!-- Display name in UnRAID UI -->
+  <Name>LAMP-Stack</Name>
+
+  <!-- Where to find the docker-compose.yml -->
+  <ComposeFile>https://raw.githubusercontent.com/EddCase/unraid-lamp-stack/main/docker-compose.yml</ComposeFile>
+
+  <!-- Where to find the .env template -->
+  <EnvFile>https://raw.githubusercontent.com/EddCase/unraid-lamp-stack/main/env.example.txt</EnvFile>
+
+  <!-- Links shown in UnRAID UI -->
+  <Repository>https://github.com/EddCase/unraid-lamp-stack</Repository>
+  <Registry>https://hub.docker.com/r/eddcase/lamp-stack</Registry>
+  <Support>https://github.com/EddCase/unraid-lamp-stack/issues</Support>
+  <Project>https://github.com/EddCase/unraid-lamp-stack</Project>
+
+  <!-- Template location for Community Apps -->
+  <TemplateURL>https://raw.githubusercontent.com/EddCase/unRAID_Templates/main/LampStack/LampStack.xml</TemplateURL>
+
+  <!-- Icon -->
+  <Icon>https://raw.githubusercontent.com/EddCase/unRAID_Templates/main/LampStack/LampStack.png</Icon>
+
+  <!-- Description shown in Community Apps -->
+  <Overview>Custom LAMP Stack development server for local WordPress, Drupal, Joomla and general PHP development.&#xD;
+&#xD;
+Includes Apache, PHP 8.3, Composer, MariaDB and phpMyAdmin.&#xD;
+&#xD;
+Supports multiple sites simultaneously via Apache virtual hosts.&#xD;
+&#xD;
+Access your sites via browser at your configured IP address.&#xD;
+Access phpMyAdmin at your configured IP address on port 8080.&#xD;
+&#xD;
+IMPORTANT: Edit the .env file before starting - set your IP address and database passwords.</Overview>
+
+  <Category>Tools: MediaApp:Other</Category>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+
+  <!-- Web UI link - opens in browser from UnRAID dashboard -->
+  <WebUI>http://[IP]:[PORT:80]/</WebUI>
+
+  <DonateText/>
+  <DonateLink/>
+
+  <!-- =========================================================
+       CONFIGURABLE FIELDS
+       These appear as editable fields in Compose Manager UI
+       ========================================================= -->
+
+  <!-- PATHS -->
+  <Config
+    Name="AppData Path"
+    Target="APPDATA_PATH"
+    Default="/mnt/user/appdata/LampStack"
+    Mode=""
+    Description="Where to store all persistent data. Change to match your UnRAID setup."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false">/mnt/user/appdata/LampStack</Config>
+
+  <!-- NETWORK -->
+  <Config
+    Name="Web Server IP"
+    Target="WEBSERVER_IP"
+    Default=""
+    Mode=""
+    Description="Fixed IP address for the web server on your local network. Must be available on your network. Check your router or Pi-hole before setting this."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false"></Config>
+
+  <!-- TIMEZONE -->
+  <Config
+    Name="Timezone"
+    Target="TZ"
+    Default="Europe/London"
+    Mode=""
+    Description="Your local timezone. Full list at https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false">Europe/London</Config>
+
+  <!-- DATABASE -->
+  <Config
+    Name="MariaDB Root Password"
+    Target="MYSQL_ROOT_PASSWORD"
+    Default=""
+    Mode=""
+    Description="Root password for MariaDB. Required - do not leave blank."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="true"></Config>
+
+  <Config
+    Name="Database Name"
+    Target="MYSQL_DATABASE"
+    Default="lampstack"
+    Mode=""
+    Description="Name of the default database created on first run."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false">lampstack</Config>
+
+  <Config
+    Name="Database User"
+    Target="MYSQL_USER"
+    Default="lampstack"
+    Mode=""
+    Description="Username for the default database user."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false">lampstack</Config>
+
+  <Config
+    Name="Database Password"
+    Target="MYSQL_PASSWORD"
+    Default=""
+    Mode=""
+    Description="Password for the default database user. Required - do not leave blank."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="true"></Config>
+
+  <!-- PORTS -->
+  <Config
+    Name="HTTP Port"
+    Target="HTTP_PORT"
+    Default="80"
+    Mode="tcp"
+    Description="External HTTP port. Change if port 80 is already in use on your UnRAID server."
+    Type="Port"
+    Display="always"
+    Required="true"
+    Mask="false">80</Config>
+
+  <Config
+    Name="HTTPS Port"
+    Target="HTTPS_PORT"
+    Default="443"
+    Mode="tcp"
+    Description="External HTTPS port. Change if port 443 is already in use on your UnRAID server."
+    Type="Port"
+    Display="always"
+    Required="true"
+    Mask="false">443</Config>
+
+  <Config
+    Name="phpMyAdmin Port"
+    Target="PMA_PORT"
+    Default="8080"
+    Mode="tcp"
+    Description="Port for phpMyAdmin database management UI. Access at http://YOUR_IP:8080"
+    Type="Port"
+    Display="always"
+    Required="true"
+    Mask="false">8080</Config>
+
+</ComposeManager>

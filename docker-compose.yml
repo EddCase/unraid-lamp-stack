@@ -1,0 +1,163 @@
+# =============================================================================
+# LAMP Stack - Docker Compose Configuration
+# Manages three containers as a single stack via UnRAID Compose Manager:
+#   1. lampstack   - Custom Apache/PHP/Composer image (eddcase/lamp-stack)
+#   2. mariadb     - Database server
+#   3. phpmyadmin  - Database management UI
+#
+# Configuration is handled via the .env file in the same directory
+# All user configurable values are defined there
+# =============================================================================
+
+version: '3.8'
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+
+networks:
+  lamp_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+  br0:
+    external: true
+
+# =============================================================================
+# VOLUMES
+# All paths are derived from APPDATA_PATH defined in .env
+# =============================================================================
+
+volumes:
+  websites:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APPDATA_PATH}/websites
+
+  database:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APPDATA_PATH}/database
+
+  logs_apache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APPDATA_PATH}/logs/apache
+
+  logs_php:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APPDATA_PATH}/logs/php
+
+  vhosts:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APPDATA_PATH}/config/vhosts
+
+# =============================================================================
+# SERVICES
+# =============================================================================
+
+services:
+
+  # ===========================================================================
+  # SERVICE 1: LAMP Stack - Apache/PHP/Composer
+  # ===========================================================================
+
+  lampstack:
+    image: eddcase/lamp-stack:latest
+    container_name: LampStack
+    restart: unless-stopped
+
+    networks:
+      br0:
+        ipv4_address: ${WEBSERVER_IP}
+      lamp_network:
+        ipv4_address: 172.20.0.2
+
+    ports:
+      - "${HTTP_PORT}:80"
+      - "${HTTPS_PORT}:443"
+
+    volumes:
+      - websites:/var/www/html
+      - logs_apache:/var/log/apache2
+      - logs_php:/var/log/php
+      - vhosts:/etc/apache2/sites-available/vhosts
+
+    environment:
+      - PUID=99
+      - PGID=100
+      - TZ=${TZ}
+
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  # ===========================================================================
+  # SERVICE 2: MariaDB - Database Server
+  # ===========================================================================
+
+  mariadb:
+    image: mariadb:11
+    container_name: LampStack-MariaDB
+    restart: unless-stopped
+
+    networks:
+      lamp_network:
+        ipv4_address: 172.20.0.3
+
+    volumes:
+      - database:/var/lib/mysql
+
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - TZ=${TZ}
+
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ===========================================================================
+  # SERVICE 3: phpMyAdmin - Database Management UI
+  # ===========================================================================
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: LampStack-phpMyAdmin
+    restart: unless-stopped
+
+    networks:
+      lamp_network:
+        ipv4_address: 172.20.0.4
+
+    ports:
+      - "${PMA_PORT}:80"
+
+    environment:
+      - PMA_HOST=mariadb
+      - PMA_PORT=3306
+      - PMA_ARBITRARY=1
+      - TZ=${TZ}
+
+    depends_on:
+      mariadb:
+        condition: service_healthy
