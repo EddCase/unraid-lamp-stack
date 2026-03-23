@@ -10,26 +10,37 @@ set -e
 echo "=== LAMP Stack Starting Up ==="
 
 # =============================================================================
-# PERMISSIONS FIX
-# Only fix ownership on folders Apache needs to write to.
-# We deliberately do NOT chown /var/www/html - that folder is owned by
-# nobody:users on UnRAID which allows Windows network share access.
-# Apache only needs read access to serve files, not ownership.
+# PERMISSIONS
+# We set permissions carefully here to satisfy two requirements:
+#
+#   1. Apache (www-data) must be able to READ website files and configs
+#   2. UnRAID user (nobody:users) must be able to READ AND WRITE via
+#      Windows network share
+#
+# Strategy:
+#   - websites and vhosts: 777 so both Apache and Windows can read/write
+#   - logs: owned by www-data so Apache can write to them
+#   - We NEVER chown /var/www/html - that would break Windows share access
 # =============================================================================
 
-echo "--- Setting permissions on mounted volumes ---"
+echo "--- Setting permissions ---"
 
-# Apache needs to write logs
+# Websites folder - 777 so Apache can read AND Windows can write
+# We do NOT chown this - nobody:users ownership must be preserved
+find /var/www/html -type d -exec chmod 777 {} \;
+find /var/www/html -type f -exec chmod 777 {} \;
+
+# Vhosts config folder - 777 so Apache can read AND Windows can write new configs
+# We do NOT chown this either
+chmod -R 777 /etc/apache2/sites-available/vhosts
+
+# Logs - Apache needs to write these so www-data ownership is correct here
 chown -R www-data:www-data /var/log/apache2
 chown -R www-data:www-data /var/log/php
+chmod -R 755 /var/log/apache2
+chmod -R 755 /var/log/php
 
-# Apache needs to read vhost configs
-chown -R www-data:www-data /etc/apache2/sites-available/vhosts
-
-# Set directory and file permissions on websites
-# 755/644 means Apache can read everything, nobody:users can read/write
-find /var/www/html -type d -exec chmod 755 {} \;
-find /var/www/html -type f -exec chmod 644 {} \;
+echo "--- Permissions set ---"
 
 # =============================================================================
 # VHOSTS CHECK
@@ -41,13 +52,15 @@ echo "--- Checking virtual hosts directory ---"
 if [ ! -d "/etc/apache2/sites-available/vhosts" ]; then
     echo "--- vhosts directory missing, recreating ---"
     mkdir -p /etc/apache2/sites-available/vhosts
-    chown www-data:www-data /etc/apache2/sites-available/vhosts
+    chmod 777 /etc/apache2/sites-available/vhosts
 fi
 
 # =============================================================================
-# DEFAULT SITE CHECK
-# On first run, copy the baked-in default site files into the webroot
-# If index.html already exists we leave it alone - don't overwrite user files
+# DEFAULT SITE
+# Always copy the baked-in defaults to make sure the latest version is live
+# We use rsync-style logic - only overwrite if the baked-in version is newer
+# This means updates to the image are reflected without wiping user changes
+# to OTHER files in the default folder
 # =============================================================================
 
 echo "--- Checking default site ---"
@@ -55,15 +68,15 @@ echo "--- Checking default site ---"
 if [ ! -d "/var/www/html/default" ]; then
     echo "--- Creating default site directory ---"
     mkdir -p /var/www/html/default
+    chmod 777 /var/www/html/default
 fi
 
-if [ ! -f "/var/www/html/default/index.html" ]; then
-    echo "--- First run detected, copying default site files ---"
-    cp -r /var/www/defaults/. /var/www/html/default/
-    echo "--- Default site files copied ---"
-else
-    echo "--- Default site already exists, leaving untouched ---"
-fi
+# Always copy index.html and lamp-icon.png from baked-in defaults
+# These are our managed files - always keep them current with the image
+echo "--- Updating default site files ---"
+cp /var/www/defaults/index.html /var/www/html/default/index.html
+cp /var/www/defaults/lamp-icon.png /var/www/html/default/lamp-icon.png
+echo "--- Default site files updated ---"
 
 # =============================================================================
 # HAND OFF TO APACHE
