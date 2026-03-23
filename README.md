@@ -35,27 +35,18 @@ Supports multiple sites simultaneously via Apache virtual hosts.
 
 ## Quick Start
 
-### 1. Clone the repository
+### 1. Deploy via Compose Manager
 
-```bash
-git clone https://github.com/EddCase/unraid-lamp-stack.git
-cd unraid-lamp-stack
-```
-
-### 2. Run the setup script (Windows)
+In UnRAID go to **Plugins → Compose Manager** and add a new stack pointing at:
 
 ```
-setup.bat
+https://raw.githubusercontent.com/EddCase/unraid-lamp-stack/main/docker-compose.yml
 ```
 
-This will:
-- Rename dotfiles from their `.txt` versions to their proper names
-- Open `.env` in Notepad for you to fill in your settings
-- Print next steps for deploying on UnRAID
+### 2. Configure your environment
 
-### 3. Fill in your `.env` file
-
-The following fields are required:
+Compose Manager will load the stack with default values from `env.example.txt`.
+Edit the ENV file in Compose Manager and fill in the required fields:
 
 ```ini
 WEBSERVER_IP=           # Available IP on your local network e.g. 192.168.0.23
@@ -63,19 +54,22 @@ MYSQL_ROOT_PASSWORD=    # Root password for MariaDB
 MYSQL_PASSWORD=         # Password for the lampstack database user
 ```
 
-The following fields have sensible defaults but can be changed:
+Optional fields with sensible defaults:
 
 ```ini
 APPDATA_PATH=/mnt/user/appdata/LampStack   # Where to store persistent data
+LAMP_SUBNET=172.21.0.0/24                  # Internal Docker subnet - change if conflicts exist
 TZ=Europe/London                            # Your timezone
 HTTP_PORT=80                                # HTTP port
 HTTPS_PORT=443                              # HTTPS port
 PMA_PORT=8080                               # phpMyAdmin port
 ```
 
-### 4. Create the appdata folder structure on UnRAID
+> If you get a subnet conflict error on first run, check your existing networks with `docker network ls` and set `LAMP_SUBNET` to an unused subnet.
 
-Open a terminal on your UnRAID server and run:
+### 3. Create the appdata folder structure
+
+SSH into your UnRAID server and run:
 
 ```bash
 mkdir -p /mnt/user/appdata/LampStack/websites/default
@@ -85,21 +79,21 @@ mkdir -p /mnt/user/appdata/LampStack/logs/php
 mkdir -p /mnt/user/appdata/LampStack/config/vhosts
 ```
 
-> If you changed `APPDATA_PATH` in your `.env`, replace `/mnt/user/appdata/LampStack` with your chosen path.
+> If you changed `APPDATA_PATH`, replace `/mnt/user/appdata/LampStack` with your chosen path.
 
-### 5. Deploy via Compose Manager
+### 4. Start the stack
 
-1. Copy the repository folder to your UnRAID server
-2. In UnRAID go to **Plugins → Compose Manager**
-3. Click **Add New Stack**
-4. Point it at your `docker-compose.yml` file
-5. Start the stack
+Click Start in Compose Manager. On first run it will:
+- Pull `eddcase/lamp-stack` from DockerHub
+- Pull `mariadb:11` from DockerHub
+- Pull `phpmyadmin:latest` from DockerHub
+- Start all three containers
 
-### 6. Verify the install
+### 5. Verify the install
 
-Visit `http://YOUR_WEBSERVER_IP` in your browser. You should see the LAMP Stack landing page confirming all components are running.
+Visit `http://YOUR_WEBSERVER_IP` — you should see the LAMP Stack landing page.
 
-phpMyAdmin is available at `http://YOUR_WEBSERVER_IP:8080`
+phpMyAdmin is available at `http://YOUR_UNRAID_IP:8080`
 
 ---
 
@@ -107,15 +101,13 @@ phpMyAdmin is available at `http://YOUR_WEBSERVER_IP:8080`
 
 ### 1. Create a folder for the site
 
-On your UnRAID server, create a folder for the site's files:
-
 ```
 /mnt/user/appdata/LampStack/websites/mysite/
 ```
 
 ### 2. Create a virtual host config
 
-Create a new `.conf` file in `/mnt/user/appdata/LampStack/config/vhosts/` based on this template:
+Create a new `.conf` file in `/mnt/user/appdata/LampStack/config/vhosts/`:
 
 ```apache
 <VirtualHost *:80>
@@ -135,22 +127,19 @@ Create a new `.conf` file in `/mnt/user/appdata/LampStack/config/vhosts/` based 
 
 ### 3. Add a Pi-hole DNS entry
 
-Add a custom DNS record in Pi-hole pointing your chosen domain at the server IP:
+Add a custom DNS record pointing your chosen domain at the server IP.
 
-```
-mysite.local → 192.168.0.x
-```
+Via Pi-hole web interface: **Settings → Local DNS → DNS Records**
 
-In Pi-hole this is done via **Local DNS → DNS Records** or by adding a line to:
-```
-/mnt/user/VM/Dockers/PiHole/dnsmasq/02-custom.conf
-```
-
+Or add directly to your dnsmasq config:
 ```
 address=/mysite.local/192.168.0.x
 ```
 
-Then restart Pi-hole's DNS resolver.
+Then reload Pi-hole DNS:
+```bash
+docker exec PiHole pihole reloaddns
+```
 
 ### 4. Restart the stack
 
@@ -178,7 +167,7 @@ Download WordPress from [wordpress.org](https://wordpress.org/download/) and ext
 
 ### 3. Create a database
 
-Open phpMyAdmin at `http://YOUR_WEBSERVER_IP:8080` and:
+Open phpMyAdmin at `http://YOUR_UNRAID_IP:8080` and:
 
 1. Click **New** in the left sidebar
 2. Enter a database name e.g. `wordpress`
@@ -211,10 +200,6 @@ unraid-lamp-stack/
 ├── Dockerfile                        # Builds the custom Apache/PHP/Composer image
 ├── docker-compose.yml                # Runs the full stack on UnRAID
 ├── entrypoint.sh                     # Container startup script
-├── setup.bat                         # Windows first-time setup script
-├── env.txt                           # Rename to .env and fill in your settings
-├── env.example.txt                   # Example .env for reference
-├── gitignore.txt                     # Rename to .gitignore
 ├── README.md                         # This file
 ├── config/
 │   ├── apache/
@@ -223,10 +208,13 @@ unraid-lamp-stack/
 │   │       └── default.conf          # Default virtual host
 │   └── php/
 │       └── php.ini                   # Custom PHP configuration
-└── websites/
-    └── default/
-        ├── index.html                # Default landing page
-        └── lamp-icon.png             # Stack icon
+├── websites/
+│   └── default/
+│       ├── index.html                # Default landing page
+│       └── lamp-icon.png             # Stack icon
+└── unraid-template/
+    ├── LampStack.xml                 # UnRAID Compose Manager template
+    └── LampStack.png                 # Template icon
 ```
 
 ### UnRAID Appdata

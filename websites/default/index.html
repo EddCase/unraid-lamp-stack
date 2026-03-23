@@ -27,15 +27,9 @@
             --green-dim:    rgba(61,214,140,0.12);
             --blue:         #60a5fa;
             --blue-dim:     rgba(96,165,250,0.12);
-            --red:          #f87171;
-            --red-dim:      rgba(248,113,113,0.12);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background: var(--bg);
@@ -74,7 +68,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
         }
 
         .logo-text h1 {
@@ -112,19 +105,13 @@
             animation: pulse 2s ease-in-out infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
         /* =====================================================================
            MAIN LAYOUT
            ===================================================================== */
 
-        main {
-            max-width: 960px;
-            margin: 0 auto;
-        }
+        main { max-width: 960px; margin: 0 auto; }
 
         /* =====================================================================
            STACK INFO CARDS
@@ -145,9 +132,7 @@
             transition: border-color 0.2s;
         }
 
-        .stack-card:hover {
-            border-color: var(--border-hover);
-        }
+        .stack-card:hover { border-color: var(--border-hover); }
 
         .stack-card-label {
             font-size: 0.7rem;
@@ -165,12 +150,6 @@
             margin-bottom: 0.3rem;
         }
 
-        .stack-card-sub {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
         .tag {
             display: inline-block;
             padding: 2px 8px;
@@ -182,7 +161,6 @@
 
         .tag-green  { background: var(--green-dim);  color: var(--green); }
         .tag-blue   { background: var(--blue-dim);   color: var(--blue); }
-        .tag-amber  { background: var(--accent-dim); color: var(--accent); }
 
         /* =====================================================================
            SITES SECTION
@@ -203,7 +181,6 @@
             letter-spacing: 0.08em;
         }
 
-        /* Empty state */
         .sites-empty {
             background: var(--bg-card);
             border: 1px dashed var(--border);
@@ -213,11 +190,7 @@
             margin-bottom: 2rem;
         }
 
-        .sites-empty-icon {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            opacity: 0.4;
-        }
+        .sites-empty-icon { font-size: 2rem; margin-bottom: 1rem; opacity: 0.4; }
 
         .sites-empty h3 {
             font-size: 0.95rem;
@@ -239,73 +212,6 @@
             border-radius: 4px;
             padding: 0 6px;
             color: var(--accent);
-        }
-
-        /* Sites will be listed here once added - populated by site management GUI later */
-        .sites-list {
-            display: grid;
-            gap: 0.75rem;
-            margin-bottom: 2rem;
-        }
-
-        .site-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1rem 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            text-decoration: none;
-            color: inherit;
-            transition: border-color 0.2s, background 0.2s;
-        }
-
-        .site-card:hover {
-            border-color: var(--accent-glow);
-            background: var(--bg-card-alt);
-        }
-
-        .site-card-left {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .site-favicon {
-            width: 32px;
-            height: 32px;
-            background: var(--bg-card-alt);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-        }
-
-        .site-name {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .site-url {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
-            margin-top: 2px;
-        }
-
-        .site-arrow {
-            color: var(--text-dim);
-            font-size: 1rem;
-            transition: color 0.2s, transform 0.2s;
-        }
-
-        .site-card:hover .site-arrow {
-            color: var(--accent);
-            transform: translateX(3px);
         }
 
         /* =====================================================================
@@ -351,17 +257,8 @@
         .link-icon-amber { background: var(--accent-dim); }
         .link-icon-blue  { background: var(--blue-dim); }
 
-        .link-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .link-desc {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
+        .link-title { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+        .link-desc  { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
 
         /* =====================================================================
            FOOTER
@@ -377,40 +274,21 @@
             justify-content: space-between;
         }
 
-        footer p {
-            font-size: 0.72rem;
-            color: var(--text-dim);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        footer a {
-            color: var(--text-dim);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        footer a:hover {
-            color: var(--accent);
-        }
+        footer p { font-size: 0.72rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+        footer a { color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+        footer a:hover { color: var(--accent); }
 
         /* =====================================================================
            FADE IN ANIMATION
            ===================================================================== */
 
-        .fade-in {
-            opacity: 0;
-            transform: translateY(12px);
-            animation: fadeIn 0.5s ease forwards;
-        }
-
+        .fade-in { opacity: 0; transform: translateY(12px); animation: fadeIn 0.5s ease forwards; }
         .fade-in:nth-child(1) { animation-delay: 0.05s; }
         .fade-in:nth-child(2) { animation-delay: 0.10s; }
         .fade-in:nth-child(3) { animation-delay: 0.15s; }
         .fade-in:nth-child(4) { animation-delay: 0.20s; }
 
-        @keyframes fadeIn {
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
 
     </style>
 </head>
@@ -434,7 +312,6 @@
 
     <main>
 
-        <!-- Stack component info -->
         <div class="section-header fade-in">
             <span class="section-title">Stack Components</span>
         </div>
@@ -462,7 +339,6 @@
             </div>
         </div>
 
-        <!-- Active sites -->
         <div class="section-header fade-in">
             <span class="section-title">Active Sites</span>
         </div>
@@ -471,7 +347,6 @@
             SITE MANAGEMENT GUI PLACEHOLDER
             When the site management GUI is built, it will dynamically
             populate this section with cards for each active vhost.
-            For now, the empty state is shown below.
         -->
         <div class="sites-empty fade-in">
             <div class="sites-empty-icon">🌐</div>
@@ -483,13 +358,12 @@
             </p>
         </div>
 
-        <!-- Quick links -->
         <div class="section-header fade-in">
             <span class="section-title">Quick Links</span>
         </div>
 
         <div class="links-grid fade-in">
-            <a class="link-card" href="/phpmyadmin" target="_blank">
+            <a class="link-card" href="http://192.168.0.2:8080" target="_blank">
                 <div class="link-icon link-icon-amber">🗄</div>
                 <div>
                     <div class="link-title">phpMyAdmin</div>

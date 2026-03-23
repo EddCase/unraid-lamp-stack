@@ -11,18 +11,23 @@ echo "=== LAMP Stack Starting Up ==="
 
 # =============================================================================
 # PERMISSIONS FIX
-# Even though we set permissions in the Dockerfile, mounted volumes
-# can have different ownership. We fix this every startup to make sure
-# Apache can always read/write them.
+# Only fix ownership on folders Apache needs to write to.
+# We deliberately do NOT chown /var/www/html - that folder is owned by
+# nobody:users on UnRAID which allows Windows network share access.
+# Apache only needs read access to serve files, not ownership.
 # =============================================================================
 
 echo "--- Setting permissions on mounted volumes ---"
 
-chown -R www-data:www-data /var/www/html
+# Apache needs to write logs
 chown -R www-data:www-data /var/log/apache2
 chown -R www-data:www-data /var/log/php
+
+# Apache needs to read vhost configs
 chown -R www-data:www-data /etc/apache2/sites-available/vhosts
 
+# Set directory and file permissions on websites
+# 755/644 means Apache can read everything, nobody:users can read/write
 find /var/www/html -type d -exec chmod 755 {} \;
 find /var/www/html -type f -exec chmod 644 {} \;
 
@@ -50,13 +55,11 @@ echo "--- Checking default site ---"
 if [ ! -d "/var/www/html/default" ]; then
     echo "--- Creating default site directory ---"
     mkdir -p /var/www/html/default
-    chown www-data:www-data /var/www/html/default
 fi
 
 if [ ! -f "/var/www/html/default/index.html" ]; then
     echo "--- First run detected, copying default site files ---"
     cp -r /var/www/defaults/. /var/www/html/default/
-    chown -R www-data:www-data /var/www/html/default
     echo "--- Default site files copied ---"
 else
     echo "--- Default site already exists, leaving untouched ---"

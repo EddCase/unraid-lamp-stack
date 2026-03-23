@@ -9,7 +9,7 @@ FROM php:8.3-apache
 
 # Image metadata labels
 LABEL maintainer="EddCase <https://github.com/EddCase>" \
-      version="1.0.0" \
+      version="1.0.1" \
       description="Custom LAMP stack for local WordPress/CMS development"
 
 # =============================================================================
@@ -25,6 +25,14 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libwebp-dev \
+    # Required by intl PHP extension
+    libicu-dev \
+    # Required by xml/soap PHP extensions
+    libxml2-dev \
+    # Required by mbstring PHP extension
+    libonig-dev \
+    # Required by curl PHP extension
+    libcurl4-openssl-dev \
     # Used by Composer and various PHP packages
     git \
     curl \
@@ -116,7 +124,9 @@ ENV PUID=${PUID}
 ENV PGID=${PGID}
 
 RUN usermod -u ${PUID} www-data \
-    && groupmod -g ${PGID} www-data \
+    # GID 100 already exists in Debian as 'users' group
+    # Add www-data to that group rather than trying to create/modify it
+    && (groupmod -g ${PGID} www-data 2>/dev/null || usermod -g ${PGID} www-data) \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 

@@ -7,28 +7,16 @@
     Repository: https://github.com/EddCase/unraid-lamp-stack
   -->
 
-  <!-- Display name in UnRAID UI -->
   <Name>LAMP-Stack</Name>
-
-  <!-- Where to find the docker-compose.yml -->
   <ComposeFile>https://raw.githubusercontent.com/EddCase/unraid-lamp-stack/main/docker-compose.yml</ComposeFile>
-
-  <!-- Where to find the .env template -->
   <EnvFile>https://raw.githubusercontent.com/EddCase/unraid-lamp-stack/main/env.example.txt</EnvFile>
-
-  <!-- Links shown in UnRAID UI -->
   <Repository>https://github.com/EddCase/unraid-lamp-stack</Repository>
   <Registry>https://hub.docker.com/r/eddcase/lamp-stack</Registry>
   <Support>https://github.com/EddCase/unraid-lamp-stack/issues</Support>
   <Project>https://github.com/EddCase/unraid-lamp-stack</Project>
-
-  <!-- Template location for Community Apps -->
   <TemplateURL>https://raw.githubusercontent.com/EddCase/unRAID_Templates/main/LampStack/LampStack.xml</TemplateURL>
-
-  <!-- Icon -->
   <Icon>https://raw.githubusercontent.com/EddCase/unRAID_Templates/main/LampStack/LampStack.png</Icon>
 
-  <!-- Description shown in Community Apps -->
   <Overview>Custom LAMP Stack development server for local WordPress, Drupal, Joomla and general PHP development.&#xD;
 &#xD;
 Includes Apache, PHP 8.3, Composer, MariaDB and phpMyAdmin.&#xD;
@@ -36,24 +24,17 @@ Includes Apache, PHP 8.3, Composer, MariaDB and phpMyAdmin.&#xD;
 Supports multiple sites simultaneously via Apache virtual hosts.&#xD;
 &#xD;
 Access your sites via browser at your configured IP address.&#xD;
-Access phpMyAdmin at your configured IP address on port 8080.&#xD;
+Access phpMyAdmin at your UnRAID server IP on port 8080.&#xD;
 &#xD;
-IMPORTANT: Edit the .env file before starting - set your IP address and database passwords.</Overview>
+IMPORTANT: Edit the .env file before starting - set your IP address and database passwords.&#xD;
+Check for subnet conflicts with: docker network ls</Overview>
 
   <Category>Tools: MediaApp:Other</Category>
   <Shell>bash</Shell>
   <Privileged>false</Privileged>
-
-  <!-- Web UI link - opens in browser from UnRAID dashboard -->
   <WebUI>http://[IP]:[PORT:80]/</WebUI>
-
   <DonateText/>
   <DonateLink/>
-
-  <!-- =========================================================
-       CONFIGURABLE FIELDS
-       These appear as editable fields in Compose Manager UI
-       ========================================================= -->
 
   <!-- PATHS -->
   <Config
@@ -78,6 +59,17 @@ IMPORTANT: Edit the .env file before starting - set your IP address and database
     Display="always"
     Required="true"
     Mask="false"></Config>
+
+  <Config
+    Name="Internal Network Subnet"
+    Target="LAMP_SUBNET"
+    Default="172.21.0.0/24"
+    Mode=""
+    Description="Internal Docker network subnet for container to container communication. Change if it conflicts with existing networks. Check with: docker network ls"
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false">172.21.0.0/24</Config>
 
   <!-- TIMEZONE -->
   <Config
@@ -164,7 +156,7 @@ IMPORTANT: Edit the .env file before starting - set your IP address and database
     Target="PMA_PORT"
     Default="8080"
     Mode="tcp"
-    Description="Port for phpMyAdmin database management UI. Access at http://YOUR_IP:8080"
+    Description="Port for phpMyAdmin database management UI. Access at http://YOUR_UNRAID_IP:8080"
     Type="Port"
     Display="always"
     Required="true"

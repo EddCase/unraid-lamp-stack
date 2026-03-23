@@ -9,8 +9,6 @@
 # All user configurable values are defined there
 # =============================================================================
 
-version: '3.8'
-
 # =============================================================================
 # NETWORKS
 # =============================================================================
@@ -20,7 +18,10 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/24
+        # Subnet is configurable via LAMP_SUBNET in .env
+        # Change if it conflicts with existing networks on your server
+        # Check existing networks with: docker network ls
+        - subnet: ${LAMP_SUBNET}
 
   br0:
     external: true
@@ -82,10 +83,12 @@ services:
     restart: unless-stopped
 
     networks:
+      # Fixed IP on your home network via br0 macvlan
       br0:
         ipv4_address: ${WEBSERVER_IP}
+      # Internal network for database connectivity
       lamp_network:
-        ipv4_address: 172.20.0.2
+        ipv4_address: 172.21.0.2
 
     ports:
       - "${HTTP_PORT}:80"
@@ -115,9 +118,10 @@ services:
     container_name: LampStack-MariaDB
     restart: unless-stopped
 
+    # MariaDB only on internal network - not exposed directly to home network
     networks:
       lamp_network:
-        ipv4_address: 172.20.0.3
+        ipv4_address: 172.21.0.3
 
     volumes:
       - database:/var/lib/mysql
@@ -138,6 +142,7 @@ services:
 
   # ===========================================================================
   # SERVICE 3: phpMyAdmin - Database Management UI
+  # Access at http://UNRAID_IP:8080 (e.g. http://192.168.0.2:8080)
   # ===========================================================================
 
   phpmyadmin:
@@ -147,7 +152,7 @@ services:
 
     networks:
       lamp_network:
-        ipv4_address: 172.20.0.4
+        ipv4_address: 172.21.0.4
 
     ports:
       - "${PMA_PORT}:80"
