@@ -67,6 +67,27 @@ volumes:
       o: bind
       device: ${APPDATA_PATH}/config/vhosts
 
+  config_apache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APPDATA_PATH}/config/apache
+
+  config_php:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APPDATA_PATH}/config/php
+
+  config_env:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APPDATA_PATH}/config/env
+
 # =============================================================================
 # SERVICES
 # =============================================================================
@@ -75,6 +96,7 @@ services:
 
   # ===========================================================================
   # SERVICE 1: LAMP Stack - Apache/PHP/Composer
+  # Accessible directly via br0 IP (192.168.0.23) - no port mapping needed
   # ===========================================================================
 
   lampstack:
@@ -99,6 +121,11 @@ services:
       - logs_apache:/var/log/apache2
       - logs_php:/var/log/php
       - vhosts:/etc/apache2/sites-available/vhosts
+      # Config files mounted from UnRAID - edit these directly, no rebuild needed
+      - config_apache:/etc/apache2/conf-available
+      - config_php:/usr/local/etc/php/conf.d
+      # Env config mounted from UnRAID - edit config/env/.env directly, no rebuild needed
+      - config_env:/var/www/config/env
 
     environment:
       - PUID=99

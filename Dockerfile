@@ -9,7 +9,7 @@ FROM php:8.3-apache
 
 # Image metadata labels
 LABEL maintainer="EddCase <https://github.com/EddCase>" \
-      version="1.0.1" \
+      version="1.0.2" \
       description="Custom LAMP stack for local WordPress/CMS development"
 
 # =============================================================================
@@ -108,7 +108,10 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
 RUN a2enmod rewrite \
     && a2enmod headers \
     && a2enmod ssl \
-    && a2enmod vhost_alias
+    && a2enmod vhost_alias \
+    && a2enmod expires \
+    && a2enmod cache \
+    && a2enmod cache_disk
 
 RUN echo "IncludeOptional /etc/apache2/sites-available/vhosts/*.conf" \
     >> /etc/apache2/apache2.conf
@@ -156,10 +159,17 @@ RUN mkdir -p \
 # into the webroot on first run without overwriting existing user files
 COPY websites/default/ /var/www/defaults/
 
-COPY config/php/php.ini /usr/local/etc/php/conf.d/custom.ini
-COPY config/apache/httpd.conf /etc/apache2/conf-available/custom.conf
-RUN a2enconf custom
-COPY config/apache/vhosts/default.conf /etc/apache2/sites-available/vhosts/default.conf
+# Copy .env example as a template
+# entrypoint.sh will copy this to /var/www/html/.env if one doesn't exist yet
+COPY config/env/.env.example /var/www/defaults/.env.example
+
+# Apache custom conf and PHP ini are now mounted via docker-compose volumes
+# They are no longer baked into the image - edit them directly on UnRAID at:
+#   /mnt/user/VM/Dockers/LampStack/config/apache/httpd.conf
+#   /mnt/user/VM/Dockers/LampStack/config/php/php.ini
+
+# Copy vhost confs (structural - these don't change often)
+COPY config/apache/vhosts/000_default.conf /etc/apache2/sites-available/vhosts/000_default.conf
 RUN a2dissite 000-default.conf
 
 # =============================================================================

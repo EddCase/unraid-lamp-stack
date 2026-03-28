@@ -4,7 +4,8 @@
 
 A custom LAMP stack Docker image for local PHP web development on UnRAID.
 Built for experimenting with WordPress, Drupal, Joomla and general PHP development.
-Supports multiple sites simultaneously via Apache virtual hosts.
+Supports multiple sites simultaneously via Apache virtual hosts, with a built-in
+web-based site manager for creating and deleting sites with a single click.
 
 ---
 
@@ -29,7 +30,7 @@ Supports multiple sites simultaneously via Apache virtual hosts.
 - UnRAID server with Docker support
 - [Compose Manager](https://forums.unraid.net/topic/114415-plugin-docker-compose-manager/) plugin installed
 - A fixed IP available on your local network
-- Pi-hole or similar for local DNS (recommended for multi-site setup)
+- Pi-hole (required for the site manager's automatic DNS management)
 
 ---
 
@@ -43,13 +44,46 @@ In UnRAID go to **Plugins → Compose Manager** and add a new stack pointing at:
 https://raw.githubusercontent.com/EddCase/unraid-lamp-stack/main/docker-compose.yml
 ```
 
-### 2. Configure your environment
+### 2. Create the appdata folder structure
 
-Compose Manager will load the stack with default values from `env.example.txt`.
-Edit the ENV file in Compose Manager and fill in the required fields:
+SSH into your UnRAID server and run:
+
+```bash
+mkdir -p /mnt/user/appdata/LampStack/websites/default
+mkdir -p /mnt/user/appdata/LampStack/database
+mkdir -p /mnt/user/appdata/LampStack/logs/apache
+mkdir -p /mnt/user/appdata/LampStack/logs/php
+mkdir -p /mnt/user/appdata/LampStack/config/vhosts
+mkdir -p /mnt/user/appdata/LampStack/config/apache
+mkdir -p /mnt/user/appdata/LampStack/config/php
+mkdir -p /mnt/user/appdata/LampStack/config/env
+```
+
+Copy the config files from the repo into the new folders:
+
+```bash
+# Copy Apache and PHP configs from the repo to your appdata
+cp config/apache/httpd.conf /mnt/user/appdata/LampStack/config/apache/httpd.conf
+cp config/php/php.ini /mnt/user/appdata/LampStack/config/php/php.ini
+cp config/env/.env.example /mnt/user/appdata/LampStack/config/env/.env
+```
+
+> If you changed `APPDATA_PATH`, replace `/mnt/user/appdata/LampStack` with your chosen path.
+
+### 3. Configure your environment
+
+Edit `/mnt/user/appdata/LampStack/config/env/.env` and fill in your values:
 
 ```ini
-WEBSERVER_IP=           # Available IP on your local network e.g. 192.168.0.23
+SERVER_IP=              # The IP your LAMP stack is accessible at e.g. 192.168.0.23
+PIHOLE_HOST=            # Pi-hole URL e.g. http://192.168.0.6
+PIHOLE_API_KEY=         # Pi-hole v6 app password (Settings → API → App password)
+```
+
+Then edit the Compose Manager ENV file and fill in the required fields:
+
+```ini
+WEBSERVER_IP=           # Same IP as SERVER_IP above e.g. 192.168.0.23
 MYSQL_ROOT_PASSWORD=    # Root password for MariaDB
 MYSQL_PASSWORD=         # Password for the lampstack database user
 ```
@@ -60,28 +94,22 @@ Optional fields with sensible defaults:
 APPDATA_PATH=/mnt/user/appdata/LampStack   # Where to store persistent data
 LAMP_SUBNET=172.21.0.0/24                  # Internal Docker subnet - change if conflicts exist
 TZ=Europe/London                            # Your timezone
-HTTP_PORT=80                                # HTTP port
-HTTPS_PORT=443                              # HTTPS port
 PMA_PORT=8080                               # phpMyAdmin port
 ```
 
-> If you get a subnet conflict error on first run, check your existing networks with `docker network ls` and set `LAMP_SUBNET` to an unused subnet.
+> If you get a subnet conflict error on first run, check existing networks with `docker network ls` and set `LAMP_SUBNET` to an unused subnet.
 
-### 3. Create the appdata folder structure
+### 4. Enable Pi-hole app_sudo (one-time setup)
 
-SSH into your UnRAID server and run:
+The site manager uses the Pi-hole v6 API to manage DNS records automatically. Run this once to grant the required permissions:
 
 ```bash
-mkdir -p /mnt/user/appdata/LampStack/websites/default
-mkdir -p /mnt/user/appdata/LampStack/database
-mkdir -p /mnt/user/appdata/LampStack/logs/apache
-mkdir -p /mnt/user/appdata/LampStack/logs/php
-mkdir -p /mnt/user/appdata/LampStack/config/vhosts
+docker exec PiHole pihole-FTL --config webserver.api.app_sudo true
 ```
 
-> If you changed `APPDATA_PATH`, replace `/mnt/user/appdata/LampStack` with your chosen path.
+This setting persists across container restarts.
 
-### 4. Start the stack
+### 5. Start the stack
 
 Click Start in Compose Manager. On first run it will:
 - Pull `eddcase/lamp-stack` from DockerHub
@@ -89,73 +117,44 @@ Click Start in Compose Manager. On first run it will:
 - Pull `phpmyadmin:latest` from DockerHub
 - Start all three containers
 
-### 5. Verify the install
+### 6. Verify the install
 
-Visit `http://YOUR_WEBSERVER_IP` — you should see the LAMP Stack landing page.
+Visit `http://YOUR_WEBSERVER_IP` — you should see the LAMP Stack site manager.
 
 phpMyAdmin is available at `http://YOUR_UNRAID_IP:8080`
 
 ---
 
-## Adding a New Site
+## Site Manager
 
-### 1. Create a folder for the site
+The default landing page at `http://YOUR_WEBSERVER_IP` is a built-in site manager. It handles everything needed to create or delete a local development site — no manual file editing or Pi-hole configuration required.
 
-```
-/mnt/user/appdata/LampStack/websites/mysite/
-```
+### Creating a site
 
-### 2. Create a virtual host config
+Enter a site name and click **Create Site**. The site manager will automatically:
 
-Create a new `.conf` file in `/mnt/user/appdata/LampStack/config/vhosts/`:
+1. Create the site folder at `/var/www/html/sitename/` with a placeholder `index.html`
+2. Write an Apache virtual host config for `sitename.local`
+3. Add a DNS record in Pi-hole pointing `sitename.local` at your server IP
+4. Gracefully reload Apache — the site is live immediately
 
-```apache
-<VirtualHost *:80>
-    ServerName mysite.local
-    DocumentRoot /var/www/html/mysite
+### Deleting a site
 
-    <Directory /var/www/html/mysite>
-        AllowOverride All
-        Require all granted
-        Options Indexes FollowSymLinks
-    </Directory>
+Click **Delete** on any site card and confirm. The site manager will automatically remove the site folder, vhost config, and Pi-hole DNS record.
 
-    CustomLog /var/log/apache2/mysite-access.log combined
-    ErrorLog /var/log/apache2/mysite-error.log
-</VirtualHost>
-```
+### Site name rules
 
-### 3. Add a Pi-hole DNS entry
-
-Add a custom DNS record pointing your chosen domain at the server IP.
-
-Via Pi-hole web interface: **Settings → Local DNS → DNS Records**
-
-Or add directly to your dnsmasq config:
-```
-address=/mysite.local/192.168.0.x
-```
-
-Then reload Pi-hole DNS:
-```bash
-docker exec PiHole pihole reloaddns
-```
-
-### 4. Restart the stack
-
-In Compose Manager, restart the stack. Apache will pick up the new vhost config automatically.
-
-### 5. Visit your new site
-
-Open `http://mysite.local` in your browser.
+- Letters, numbers, hyphens and underscores only
+- Cannot be `default`
+- Cannot start with `000`
 
 ---
 
 ## Installing WordPress
 
-### 1. Add a new site following the steps above
+### 1. Create a new site via the site manager
 
-Use a domain like `wordpress.local`.
+Visit `http://YOUR_WEBSERVER_IP` and create a site named `wordpress`. This sets up the folder, vhost config and DNS record automatically.
 
 ### 2. Download WordPress
 
@@ -203,18 +202,17 @@ unraid-lamp-stack/
 ├── README.md                         # This file
 ├── config/
 │   ├── apache/
-│   │   ├── httpd.conf                # Custom Apache configuration
+│   │   ├── httpd.conf                # Custom Apache configuration (KeepAlive, compression, caching)
 │   │   └── vhosts/
-│   │       └── default.conf          # Default virtual host
-│   └── php/
-│       └── php.ini                   # Custom PHP configuration
-├── websites/
-│   └── default/
-│       ├── index.html                # Default landing page
-│       └── lamp-icon.png             # Stack icon
-└── unraid-template/
-    ├── LampStack.xml                 # UnRAID Compose Manager template
-    └── LampStack.png                 # Template icon
+│   │       └── 000_default.conf      # Default virtual host (fallback for direct IP access)
+│   ├── php/
+│   │   └── php.ini                   # Custom PHP configuration (OPcache, XDebug, upload limits)
+│   └── env/
+│       └── .env.example              # Site manager environment config template
+└── websites/
+    └── default/
+        ├── index.php                 # Default landing page and site manager
+        └── lamp-icon.png             # Stack icon
 ```
 
 ### UnRAID Appdata
@@ -222,18 +220,35 @@ unraid-lamp-stack/
 ```
 LampStack/
 ├── websites/                         # Site files - one folder per site
-│   ├── default/                      # Default landing page
+│   ├── default/                      # Default landing page and site manager
 │   ├── wordpress/                    # Example WordPress site
 │   └── mysite/                       # Example custom site
 ├── database/                         # MariaDB data files (do not edit manually)
 ├── logs/
 │   ├── apache/                       # Apache access and error logs
-│   └── php/                          # PHP error and xdebug logs
+│   └── php/                          # PHP error and XDebug logs
 └── config/
-    └── vhosts/                       # Virtual host configs - one .conf per site
-        ├── wordpress.conf
-        └── mysite.conf
+    ├── vhosts/                       # Virtual host configs - one .conf per site
+    │   ├── wordpress.conf
+    │   └── mysite.conf
+    ├── apache/
+    │   └── httpd.conf                # Apache config - edit directly, restart to apply
+    ├── php/
+    │   └── php.ini                   # PHP config - edit directly, restart to apply
+    └── env/
+        └── .env                      # Site manager environment config (never commit this)
 ```
+
+> `config/apache/`, `config/php/` and `config/env/` are mounted as Docker volumes. Edit files directly on the host — no image rebuild needed, just restart the container.
+
+---
+
+## Performance Notes
+
+- **OPcache** is enabled by default for PHP bytecode caching
+- **mod_deflate** is enabled for gzip compression
+- **mod_expires** is enabled for browser caching of static assets
+- **XDebug** is installed but set to `trigger` mode — it only activates when deliberately triggered via a browser extension, so normal page loads are unaffected
 
 ---
 
@@ -270,16 +285,14 @@ docker push eddcase/lamp-stack:latest
 
 ## Roadmap
 
-- [ ] Site management GUI — web based tool for creating new virtual hosts and Pi-hole DNS entries automatically
-- [ ] Landing page dashboard — auto-updating list of active sites
 - [ ] HTTPS support via NPM proxy host for external access
 - [ ] Redis container (optional add-on)
+- [ ] Gitea + Code-server integration
 
 ---
 
 ## Maintainer
 
-**Edd Case**
 - GitHub: [github.com/EddCase](https://github.com/EddCase)
 - DockerHub: [hub.docker.com/u/eddcase](https://hub.docker.com/u/eddcase)
 
