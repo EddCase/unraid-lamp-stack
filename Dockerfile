@@ -169,7 +169,7 @@ COPY config/env/.env.example /var/www/defaults/.env.example
 #   /mnt/user/VM/Dockers/LampStack/config/php/php.ini
 
 # Copy vhost confs (structural - these don't change often)
-COPY config/apache/vhosts/000_default.conf /etc/apache2/sites-available/vhosts/000_default.conf
+COPY config/vhosts/000_default.conf /etc/apache2/sites-available/vhosts/000_default.conf
 RUN a2dissite 000-default.conf
 
 # =============================================================================
