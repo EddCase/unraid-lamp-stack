@@ -40,6 +40,8 @@ RUN apt-get update && apt-get install -y \
     nano \
     # Midnight Commander - visual file manager for working inside the container
     mc \
+    # sudo - allows www-data to send SIGHUP to Apache master process
+    sudo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -132,7 +134,12 @@ RUN usermod -u ${PUID} www-data \
     && (groupmod -g ${PGID} www-data 2>/dev/null || usermod -g ${PGID} www-data) \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
+# =============================================================================
+# APACHE RELOAD PERMISSION
+# =============================================================================
 
+RUN echo "www-data ALL=(root) NOPASSWD: /bin/kill -HUP 1" > /etc/sudoers.d/www-data-apache \
+    && chmod 0440 /etc/sudoers.d/www-data-apache
 # =============================================================================
 # WEBROOT SETUP
 # =============================================================================
